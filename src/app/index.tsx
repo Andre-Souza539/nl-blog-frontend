@@ -1,98 +1,108 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { api } from "@/services/api";
+import { PageResponse, Post } from "@/types/post";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchPosts() {
+    try {
+      setLoading(true);
+      const response = await api.get<PageResponse<Post>>("/api/v1/posts");
+      setPosts(response.data.content);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007ACC" />
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <View style={styles.container}>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{item.title}</Text>
+            <Text style={styles.cardSummary}>
+              {item.summary || "No summary available."}
+            </Text>
+            <Text style={styles.cardDate}>
+              Criado em: {new Date(item.createdAt).toLocaleDateString("pt-BR")}
+            </Text>
+          </View>
+        )}
+        ListEmptyComponent={() => (
+          <View style={styles.center}>
+            <Text style={styles.subtitle}>No posts available.</Text>
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    backgroundColor: "#f0f0f0",
+    margin: 10,
+    padding: 10,
+    borderRadius: 5,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  cardSummary: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+  },
+  cardDate: {
+    fontSize: 12,
+    color: "#333",
   },
 });
