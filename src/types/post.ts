@@ -6,6 +6,7 @@ export interface Post {
   published: boolean;
   createdAt: string;
   authorName?: string;
+  content: string;
 }
 
 export interface PageResponse<T> {

@@ -7,16 +7,20 @@ export default function RootLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: "#121214",
-        },
+        headerStyle: { backgroundColor: "#121214" },
         headerTintColor: "#FFFFFF",
-        headerTitleStyle: {
-          fontWeight: "bold",
-        },
+        headerTitleStyle: { fontWeight: "bold" },
       }}
     >
       <Stack.Screen name="index" options={{ title: "Feed de Posts" }} />
+      <Stack.Screen
+        name="login"
+        options={{ presentation: "modal", title: "Login" }}
+      />
+      <Stack.Screen
+        name="create-post"
+        options={{ presentation: "modal", title: "Novo Artigo" }}
+      />
     </Stack>
   );
 }
